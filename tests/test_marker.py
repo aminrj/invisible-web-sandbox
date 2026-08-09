@@ -18,7 +18,12 @@ from extract import extract  # noqa: E402
 FIXTURE = Path(__file__).parent.parent / "fixtures" / "marker.html"
 OUT_DIR = Path(__file__).parent / "_out"
 
-# marker string -> primary reason it must carry as a *text* finding
+# marker string -> reason it must carry as a *text* finding. Checked via
+# membership in reasons[], not equality with primary: primary is just
+# reasons[0], which depends on ancestor-walk/check order, not on which
+# technique is "the" correct one - a marker can legitimately stack more
+# than one (e.g. a delayed display:none injection is both
+# css-rendering-suppression and dynamic-execution).
 TEXT_MARKERS = {
     "MARKER-ALPHA-7": "visual-concealment/css-rendering-suppression",
     "MARKER-CHARLIE-9": "visual-concealment/off-screen-positioning",
@@ -59,11 +64,11 @@ def find_attr_finding(snapshot, marker):
     return matches[0]
 
 
-def test_text_markers_have_correct_primary_reason(snapshots):
+def test_text_markers_carry_expected_reason(snapshots):
     t1 = snapshots["t1"]
-    for marker, expected_primary in TEXT_MARKERS.items():
+    for marker, expected_reason in TEXT_MARKERS.items():
         finding = find_text_finding(t1, marker)
-        assert finding["primary"] == expected_primary, marker
+        assert expected_reason in finding["reasons"], marker
 
 
 def test_attr_markers_have_correct_attribute(snapshots):

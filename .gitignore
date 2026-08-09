@@ -3,3 +3,5 @@ tests/_out/
 __pycache__/
 .pytest_cache/
 *.pyc
+.DS_Store
+.playwright-mcp/

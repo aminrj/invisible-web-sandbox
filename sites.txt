@@ -1,3 +1,44 @@
-# One URL per line. Lines starting with # are ignored.
-# Add the sites you want measured, e.g.:
-# https://example.com
+# Hand-picked stratified sample, 2026-08-09. Not a random Tranco draw.
+# Six categories, five each. Homepages only, logged out.
+
+# news
+https://www.bbc.com
+https://www.theguardian.com
+https://www.reuters.com
+https://www.aljazeera.com
+https://www.svt.se
+
+# retail
+https://www.ikea.com/se/sv/
+https://www.etsy.com
+https://www.zalando.se
+https://www.decathlon.com
+https://www.adidas.com
+
+# saas marketing
+https://stripe.com
+https://vercel.com
+https://www.atlassian.com
+https://www.notion.so
+https://linear.app
+
+# government and public
+https://www.gov.uk
+https://www.regeringen.se
+https://europa.eu
+https://www.skatteverket.se
+https://www.canada.ca
+
+# documentation
+https://developer.mozilla.org
+https://docs.python.org/3/
+https://kubernetes.io/docs/home/
+https://developer.chrome.com
+https://docs.astro.build
+
+# framework-heavy spa
+https://www.airbnb.com
+https://open.spotify.com
+https://www.figma.com
+https://app.slack.com
+https://www.canva.com
