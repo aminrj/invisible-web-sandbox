@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Auralis ANC Pro | Wireless Headphones</title>
+  <!--
+    This fixture is deliberately minimal, not a full mock storefront. Every
+    visible text node on the page is accounted for by tests/test_marker.py,
+    so nothing decorative (nav links, headings, buttons with labels, etc.)
+    was added beyond the two paragraphs the test expects.
+  -->
+  <style>
+    .hidden-alpha { display: none; }
+    .offscreen-charlie { position: absolute; left: -9999px; top: 0; }
+    .transparent-delta { opacity: 0; }
+    .camouflage-golf { color: #ffffff; background-color: #ffffff; }
+    .zero-size-india { font-size: 0; }
+  </style>
+</head>
+<body data-note="MARKER-HOTEL-6 this is a hidden note">
+  <!-- MARKER-ECHO-1 hidden text -->
+
+  <div class="hidden-alpha">MARKER-ALPHA-7 secret text</div>
+
+  <img src="headphones.jpg" alt="MARKER-BRAVO-3 test alt text" />
+
+  <span class="offscreen-charlie">MARKER-CHARLIE-9 hidden text</span>
+
+  <p class="transparent-delta">MARKER-DELTA-5 hidden text</p>
+
+  <button type="button" aria-label="MARKER-FOXTROT-4 buy now"></button>
+
+  <span class="camouflage-golf">MARKER-GOLF-2 hidden text</span>
+
+  <span class="zero-size-india">MARKER-INDIA-8 hidden text</span>
+
+  <p id="visible-copy">Auralis ANC Pro headphones deliver rich immersive sound with deep controlled bass and crisp clear highs for music lovers who want dependable audio every day. The soft cushions and headband provide lasting comfort during long listening sessions at home today.</p>
+
+  <p id="zero-width-copy">This carrying pouch pro&#8203;tects your headphones during travel and everyday commutes without any hassle.</p>
+
+  <script>
+    setTimeout(function () {
+      var span = document.createElement("span");
+      span.style.display = "none";
+      span.textContent = "MARKER-JULIET-0 hidden text";
+      document.body.appendChild(span);
+    }, 3000);
+  </script>
+</body>
+</html>
