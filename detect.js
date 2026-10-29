@@ -149,13 +149,73 @@ function detectInvisibleText() {
     return false;
   }
 
+  // Returns null (rather than guessing) when a background-image was seen
+  // before any resolvable background-color: background-image content is
+  // ignored by design (meta.background_image_limitation), and defaulting to
+  // white in that case produced false positives - light text legible over a
+  // photo (a hero banner, for example) was being flagged as camouflaged
+  // against an assumed-white background that was never actually there.
   function effectiveBackground(el, win) {
+    let sawBackgroundImage = false;
     for (const ancestor of ancestorsOf(el)) {
       const cs = win.getComputedStyle(ancestor);
+      if (cs.backgroundImage && cs.backgroundImage !== "none") sawBackgroundImage = true;
       const bg = parseColor(cs.backgroundColor);
       if (bg && bg.a > 0) return { r: bg.r, g: bg.g, b: bg.b };
     }
+    if (sawBackgroundImage) return null;
     return { r: 255, g: 255, b: 255 };
+  }
+
+  const IMAGE_TAGS = new Set(["IMG", "PICTURE", "VIDEO", "CANVAS", "SVG"]);
+
+  function isSelfOrRelated(el, candidate) {
+    return candidate === el || candidate.contains(el) || el.contains(candidate);
+  }
+
+  // effectiveBackground only ever looks at el's own ancestor chain's CSS,
+  // which misses two real cases: (1) a hero image behind text that's a
+  // sibling/positioned <img> or <video> rather than a CSS background-image
+  // (common - better for SEO/lazy-loading/responsive srcset), and (2)
+  // anything else entirely unrelated to el that happens to be visually
+  // stacked on top of it at measurement time - a cookie banner, a
+  // newsletter popup, anything with a higher z-index. In case (2) we
+  // cannot know what a human would actually perceive as the background
+  // there (plain color, image, or the popup itself), so we abstain rather
+  // than guess. elementsFromPoint asks the browser directly what's really
+  // stacked at that point, in paint order, independent of DOM ancestry -
+  // the correct tool for this, not a heuristic guess.
+  //
+  // Known limitation: elementsFromPoint is viewport-relative, so this only
+  // sees stacked content for text currently within the viewport bounds at
+  // check time (i.e. above the fold, after scroll-to-top for T1).
+  // Below-the-fold text is not covered by this check.
+  function backgroundIsUncertain(el, win) {
+    const doc = el.ownerDocument;
+    if (typeof doc.elementsFromPoint !== "function") return false;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return false;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    if (cx < 0 || cy < 0 || cx > win.innerWidth || cy > win.innerHeight) return false;
+
+    const stack = doc.elementsFromPoint(cx, cy);
+
+    // Something entirely unrelated to el is the topmost thing at this
+    // point - a human right now sees that, not el's own background.
+    const topmost = stack[0];
+    if (topmost && !isSelfOrRelated(el, topmost)) return true;
+
+    // Otherwise, look deeper in the stack for an image/video rendered
+    // behind el via sibling/positioned markup rather than a CSS
+    // background-image on an ancestor.
+    for (const candidate of stack) {
+      if (isSelfOrRelated(el, candidate)) continue;
+      if (IMAGE_TAGS.has(candidate.tagName)) return true;
+      const candidateBgImage = win.getComputedStyle(candidate).backgroundImage;
+      if (candidateBgImage && candidateBgImage !== "none") return true;
+    }
+    return false;
   }
 
   function isCamouflaged(el, win) {
@@ -163,8 +223,21 @@ function detectInvisibleText() {
     const color = parseColor(cs.color);
     if (!color) return false;
     const bg = effectiveBackground(el, win);
+    if (!bg) return false;
     const diff = Math.abs(color.r - bg.r) + Math.abs(color.g - bg.g) + Math.abs(color.b - bg.b);
-    return diff < CAMOUFLAGE_THRESHOLD;
+    if (diff >= CAMOUFLAGE_THRESHOLD) return false;
+    // Only pay for the expensive hit-test once a finding is actually about
+    // to be flagged, not for every text node on the page.
+    if (backgroundIsUncertain(el, win)) return false;
+    return true;
+  }
+
+  // hidden/clip/scroll/auto all clip their box's overflow; visible (the
+  // default) does not, so a zero-area box with overflow:visible does not
+  // conceal children rendered outside it.
+  function ancestorClipsOverflow(cs) {
+    const CLIPS = new Set(["hidden", "clip", "scroll", "auto"]);
+    return CLIPS.has(cs.overflowX) || CLIPS.has(cs.overflowY);
   }
 
   // Reasons contributed by a single ancestor element (display/visibility,
@@ -172,7 +245,14 @@ function detectInvisibleText() {
   // evaluated separately (once, for the nearest ancestor only) since it is a
   // property of resolved text color vs. effective background, not something
   // that makes sense to re-check at every level of the chain.
-  function reasonsFromAncestor(el, win, offsetX, offsetY, topDocScrollWidth) {
+  //
+  // isTextBearingElement is true only for the nearest element ancestor (the
+  // one the text node is actually inside). A zero-area *ancestor* further up
+  // the chain only conceals its descendants if it also clips overflow -
+  // otherwise the text can still render outside that box. The text-bearing
+  // element itself has no such exemption: if font-size/line-height/its own
+  // box are zero, the text has nowhere to render regardless of overflow.
+  function reasonsFromAncestor(el, win, offsetX, offsetY, topDocScrollWidth, isTextBearingElement) {
     const reasons = [];
     const cs = win.getComputedStyle(el);
 
@@ -184,7 +264,8 @@ function detectInvisibleText() {
     const fontSize = parseFloat(cs.fontSize);
     const lineHeight = cs.lineHeight === "normal" ? NaN : parseFloat(cs.lineHeight);
     const zeroRect = rect !== null && (rect.w === 0 || rect.h === 0);
-    if (fontSize === 0 || lineHeight === 0 || zeroRect) {
+    const zeroRectConceals = isTextBearingElement ? zeroRect : zeroRect && ancestorClipsOverflow(cs);
+    if (fontSize === 0 || lineHeight === 0 || zeroRectConceals) {
       reasons.push(REASON.ZERO_SIZE);
     }
 
@@ -224,10 +305,13 @@ function detectInvisibleText() {
 
     if (isCamouflaged(nearestEl, win)) add(REASON.CAMOUFLAGE);
 
+    let depth = 0;
     for (const ancestor of ancestorsOf(nearestEl)) {
-      for (const r of reasonsFromAncestor(ancestor, win, offsetX, offsetY, topDocScrollWidth)) {
+      const isTextBearingElement = depth === 0;
+      for (const r of reasonsFromAncestor(ancestor, win, offsetX, offsetY, topDocScrollWidth, isTextBearingElement)) {
         add(r);
       }
+      depth++;
     }
 
     return ordered;

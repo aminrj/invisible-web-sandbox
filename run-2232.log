@@ -1,0 +1,38 @@
+[ 1/30] 00:00:00  www.bbc.com                   hidden_share 0.449  (0 failed)
+[ 2/30] 00:00:21  www.theguardian.com           hidden_share 0.687  (0 failed)
+[ 3/30] 00:00:36  www.reuters.com               hidden_share 1.000  (0 failed)
+[ 4/30] 00:00:50  www.aljazeera.com             hidden_share 0.639  (0 failed)
+[ 5/30] 00:01:06  www.svt.se                    hidden_share 0.677  (0 failed)
+[ 6/30] 00:01:26  www.ikea.com                  hidden_share 0.724  (0 failed)
+[ 7/30] 00:01:57  www.etsy.com                  hidden_share 1.000  (0 failed)
+[ 8/30] 00:02:11  www.zalando.se                hidden_share 0.817  (0 failed)
+[ 9/30] 00:02:27  www.decathlon.com             hidden_share 0.936  (0 failed)
+[10/30] 00:02:54  www.adidas.com                hidden_share 0.005  (0 failed)
+[11/30] 00:03:08  stripe.com                    hidden_share 0.568  (0 failed)
+[12/30] 00:03:31  vercel.com                    hidden_share 0.626  (0 failed)
+[13/30] 00:03:51  www.atlassian.com             hidden_share 0.875  (0 failed)
+[14/30] 00:04:25  www.notion.so                 hidden_share 0.559  (0 failed)
+[15/30] 00:04:45  linear.app                    hidden_share 0.260  (0 failed)
+[16/30] 00:05:05  www.gov.uk                    hidden_share 0.551  (0 failed)
+[17/30] 00:05:20  www.regeringen.se             hidden_share 0.964  (0 failed)
+[18/30] 00:05:38  europa.eu                     hidden_share 0.647  (0 failed)
+[19/30] 00:05:55  www.skatteverket.se           hidden_share 0.524  (0 failed)
+[20/30] 00:06:09  www.canada.ca                 hidden_share 1.000  (0 failed)
+[21/30] 00:06:36  developer.mozilla.org         hidden_share 0.419  (0 failed)
+[22/30] 00:06:51  docs.python.org               hidden_share 0.291  (0 failed)
+[23/30] 00:07:05  kubernetes.io                 hidden_share 0.895  (0 failed)
+[24/30] 00:07:22  developer.chrome.com          hidden_share 0.644  (0 failed)
+[25/30] 00:07:39  docs.astro.build              hidden_share 0.736  (0 failed)
+[26/30] 00:07:54  www.airbnb.com                hidden_share 0.653  (0 failed)
+[27/30] 00:08:09  open.spotify.com              hidden_share 0.781  (0 failed)
+[28/30] 00:08:26  www.figma.com                 hidden_share 0.721  (0 failed)
+[29/30] 00:08:53  app.slack.com                 hidden_share 0.751  (0 failed)
+[30/30] 00:09:13  www.canva.com                 hidden_share 0.219  (0 failed)
+Total elapsed: 00:09:35
+Sites attempted this run: 30
+Sites succeeded (in combined output): 30
+Median/mean below are computed over sites SUCCEEDED, not sites attempted.
+Median hidden_share: 0.6648
+Mean hidden_share:   0.6539
+Sites with hidden_share > 0: 30 (100.0%)
+Sites with dynamic_words > 0: 10

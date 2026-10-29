@@ -47,10 +47,25 @@ def run_detect(page, detect_source: str) -> dict:
     return page.evaluate("() => {\n" + detect_source + "\nreturn detectInvisibleText();\n}")
 
 
+def wait_for_networkidle(page) -> None:
+    try:
+        page.wait_for_load_state("networkidle", timeout=NETWORKIDLE_TIMEOUT_MS)
+    except PlaywrightTimeoutError:
+        pass
+
+
 def scroll_page(page) -> None:
-    height = page.evaluate("document.documentElement.scrollHeight")
+    # scrollHeight is re-read every iteration, not once upfront: scrolling
+    # can itself trigger lazy-loaded content that grows the page, and a
+    # height captured before that growth would cut the scroll pass short.
+    # max_steps bounds this against pages that grow indefinitely (infinite
+    # scroll feeds) rather than looping forever.
     y = 0
-    while y < height:
+    max_steps = 500
+    for _ in range(max_steps):
+        height = page.evaluate("document.documentElement.scrollHeight")
+        if y >= height:
+            break
         y += SCROLL_STEP_PX
         page.evaluate("window.scrollTo(0, %d)" % y)
         time.sleep(SCROLL_PAUSE_S)
@@ -113,10 +128,7 @@ def extract(url: str, out_dir: Path = OUT_DIR) -> dict:
         browser = p.chromium.launch()
         page = browser.new_page(viewport=VIEWPORT)
         page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
-        try:
-            page.wait_for_load_state("networkidle", timeout=NETWORKIDLE_TIMEOUT_MS)
-        except PlaywrightTimeoutError:
-            pass
+        wait_for_networkidle(page)
 
         t0_path = out_dir / f"{slug}.t0.json"
         t1_path = out_dir / f"{slug}.t1.json"
@@ -125,6 +137,10 @@ def extract(url: str, out_dir: Path = OUT_DIR) -> dict:
         t0_path.write_text(json.dumps(t0, indent=2), encoding="utf-8")
 
         scroll_page(page)
+        # Scrolling can itself trigger new requests (lazy images, XHR-loaded
+        # menu content) - give those a chance to finish before the settle
+        # sleep, rather than starting the countdown while they're mid-flight.
+        wait_for_networkidle(page)
         time.sleep(SETTLE_SLEEP_S)
 
         t1 = run_detect(page, detect_source)
